@@ -16,18 +16,18 @@ class ExpenseScreen < UI::Screen
   end
 
   def expense_form
-    [:view, { padding_left: 0, padding_right: 0, flex: 1 },
+    [:view, { padding_left: 0, padding_right: 0, flex: 1, height: Hiccup.device_screen_height },
      [:web_view, { id: :web, flex: 1 }]]
   end
 
   def markup
     [:view, { background_color: '212225', flex: 1 },
-     header,
+     # header,
      expense_form]
   end
 
   def on_load_core
-    urlAddress = "http://www.apple.com"
+    urlAddress = "https://3.basecamp.com/sign_in"
     url = NSURL.URLWithString(urlAddress)
     requestObj = NSURLRequest.requestWithURL(url)
     views[:web][:view].proxy.loadRequest(requestObj)

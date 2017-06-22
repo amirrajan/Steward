@@ -4,6 +4,7 @@ class AppDelegate
   def application(application, didFinishLaunchingWithOptions:launchOptions)
     Hiccup.platform = :ios
     Hiccup.device_screen_height = device_screen_height
+    Hiccup.device_screen_width = device_screen_width
 
     NSNotificationCenter.defaultCenter.addObserver(
       self,
@@ -35,6 +36,7 @@ class AppDelegate
   end
 
   def keyboard_did_show *notification
+    return unless Hiccup.currently_focused_control
     absolute_control_rect = Hiccup.currently_focused_control.proxy.convertRect(
       Hiccup.currently_focused_control.proxy.bounds,
       toView: window
@@ -62,5 +64,9 @@ class AppDelegate
 
   def device_screen_height
     UIScreen.mainScreen.bounds.size.height
+  end
+
+  def device_screen_width
+    UIScreen.mainScreen.bounds.size.width
   end
 end

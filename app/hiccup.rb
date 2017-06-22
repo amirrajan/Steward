@@ -3,7 +3,8 @@ module Hiccup
     attr_accessor :currently_focused_control,
                   :current_screen,
                   :platform,
-                  :device_screen_height
+                  :device_screen_height,
+                  :device_screen_width
   end
 
   def self.ios?
@@ -23,7 +24,7 @@ module Hiccup
   def on_load
     $self = self
     Hiccup.current_screen = self
-    render markup, css
+    render_main_screen
     view.update_layout
     on_load_core if respond_to? :on_load_core
   end
@@ -43,7 +44,7 @@ module Hiccup
 
   def on_show
     navigation.hide_bar
-    views[:flash][:view].move_y_to(Hiccup.device_screen_height, false)
+    @flash_container.move_y_to(Hiccup.device_screen_height, false)
     on_show_core if respond_to? :on_show_core
   end
 
@@ -68,11 +69,11 @@ module Hiccup
   def flash message
     debounce_flash
 
-    views[:flash][:view].alpha = 1
-    views[:flash_message][:view].text = message
-    views[:flash][:view].move_y_to(
+    @flash_container.alpha = 1
+    @flash_container_lookup[:views][:flash_message][:view].text = message
+    @flash_container.move_y_to(
       Hiccup.device_screen_height -
-      views[:flash][:view].proxy.frame.size.height -
+      @flash_container.proxy.frame.size.height -
       10,
       true
     )
@@ -84,7 +85,7 @@ module Hiccup
 
   def dismiss_flash
     debounce_flash
-    views[:flash][:view].move_y_to(Hiccup.device_screen_height, true)
+    @flash_container.move_y_to(Hiccup.device_screen_height, true)
   end
 
   def wire_up_dismiss_keyboard_for_ios
@@ -94,21 +95,31 @@ module Hiccup
     view.proxy.addGestureRecognizer(@recognizer)
   end
 
-  def render definition, styles
-    view.children.each do |c|
-      view.delete_child c
-    end
-
-    definition << flash_view
+  def render_main_screen
+    render markup, css, view, hiccup
 
     wire_up_dismiss_keyboard_for_ios
+
+    @flash_container = UI::View.new
+    @flash_container.width = Hiccup.device_screen_width
+    @flash_container_lookup = {}
+    render flash_view, css, @flash_container, @flash_container_lookup
+    @flash_container.update_layout
+
+    UIApplication.sharedApplication.keyWindow.addSubview @flash_container.proxy
+  end
+
+  def render definition, styles, parent, lookups
+    parent.children.each do |c|
+      parent.child c
+    end
 
     views = {}
     classes = {}
     tab_orders = {}
     bar_button_tags = {}
 
-    add_to_parent parent: view,
+    add_to_parent parent: parent,
                   definition: definition,
                   styles: styles,
                   views: views,
@@ -118,14 +129,14 @@ module Hiccup
 
     setup_responders views: views, tab_orders: tab_orders, bar_button_tags: bar_button_tags
 
-    hiccup[:tab_orders] = tab_orders
-    hiccup[:views] = views
-    hiccup[:classes] = classes
-    hiccup[:bar_button_tags] = bar_button_tags
+    lookups[:tab_orders] = tab_orders
+    lookups[:views] = views
+    lookups[:classes] = classes
+    lookups[:bar_button_tags] = bar_button_tags
   end
 
   def flash_view
-    [:view, { id: :flash, padding: 20, class: :flash, alpha: 0 },
+    [:view, { id: :flash, padding: 20, class: :flash },
      [:label, { id: :flash_message, text: 'Flash' }]]
   end
 
