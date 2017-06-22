@@ -10,13 +10,15 @@ class ExpenseScreen < UI::Screen
   def header
     [:view, { flex_direction: :row },
      [:button, { class: :hamburger, tap: :show_menu }],
-     [:label, { flex: 1, text: 'Budget Simple', font: font.merge({ size: 20 }),
+     [:label, { flex: 1,
+                text: 'Budget Simple',
+                font: font.merge({ size: 20 }),
                 align_self: :center }],
      [:view, { width: 50 }]]
   end
 
   def expense_form
-    [:view, { padding_left: 0, padding_right: 0, flex: 1, height: Hiccup.device_screen_height },
+    [:view, { flex: 1 },
      [:web_view, { id: :web, flex: 1 }]]
   end
 
