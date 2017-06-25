@@ -29,6 +29,11 @@ class ExpenseScreen < UI::Screen
   end
 
   def on_load_core
+    ReverseProxy.debug = 1
+    ReverseProxy.delegate = self
+    ReverseProxy.whitelist(/basecamp\.com\/sign_in/)
+    ReverseProxy.whitelist(/launchpad.*forgot_password/)
+    NSURLProtocol.registerClass(ReverseProxy)
     urlAddress = "https://3.basecamp.com/sign_in"
     url = NSURL.URLWithString(urlAddress)
     requestObj = NSURLRequest.requestWithURL(url)
@@ -36,17 +41,49 @@ class ExpenseScreen < UI::Screen
     views[:web][:view].proxy.delegate = self
   end
 
-  def webView _, shouldStartLoadWithRequest: request, navigationType: navigation
-    puts request.URL.absoluteString
+  def startedLoading url
+    # puts "started #{url}"
+  end
+
+  def completedLoading url
+    puts url
+    if url =~ /basecamp\.com\/sign_in/
+      intercept('form', 'submit', :hello_world)
+    elsif url =~ /forgot_password/
+      intercept('input[name=commit]', 'click', :hello_world)
+      intercept('input[name=commit]', 'submit', :hello_world)
+    end
+  end
+
+  def run_after(delay, &block)
+    NSTimer.scheduledTimerWithTimeInterval(
+      delay,
+      target: block,
+      selector: 'call:',
+      userInfo: nil,
+      repeats: false
+    )
+  end
+
+  def webView webView, shouldStartLoadWithRequest: request, navigationType: navigation
+    if request.URL.absoluteString =~ /^steward:/
+      send(request.URL.absoluteString.split(':').last)
+      return false
+    end
+
     true
   end
 
-  def webViewDidStartLoad _
-    puts "starting"
+  def hello_world
+    flash "it worked"
   end
 
-  def webViewDidFinishLoad _
-    puts query_selector_all('input')
+  def wow
+    flash "wow"
+  end
+
+  def lol
+    flash "lol"
   end
 
   def query_selector_all css
@@ -55,11 +92,13 @@ class ExpenseScreen < UI::Screen
       var results = [ ];
       var index = 0;
       for(index = 0; index < x.length; index++) {
-        results.push({
-          id: x[index].getAttribute('id'),
-          href: x[index].getAttribute('href'),
-          value: x[index].getAttribute('val')
-        });
+        console.log(x);
+        var attributes = {};
+        for (var attributeIndex = 0; attributeIndex < x[index].attributes.length; attributeIndex++) {
+          var attribute = x[index].attributes[attributeIndex];
+          attributes[attribute.nodeName] = attribute.nodeValue;
+        }
+        results.push(attributes);
       }
       JSON.stringify(results);
     SCRIPT
@@ -67,10 +106,49 @@ class ExpenseScreen < UI::Screen
     parse(eval_js(value))
   end
 
+  def intercept css, event, method, trys = 0
+    success = intercept_js(css, event, method)
+
+    if success
+      puts "Found #{css}."
+      return
+    end
+
+    raise "Can't find #{css}." if trys == 50
+
+    run_after(0.1) do
+      intercept css, event, method, trys + 1
+    end
+  end
+
+  def intercept_js css, event, method
+    value = <<-SCRIPT
+      if (typeof window.tryApply == "undefined") {
+        window.tryApply = function(css, event, method) {
+            var x = document.querySelectorAll(css);
+            if(x.length == 0) {
+              return false;
+            }
+
+            x[0].addEventListener(event, function(evt) {
+                evt.preventDefault();
+                window.location = 'steward:' + method;
+                return false;
+            });
+
+          return true;
+        }
+      }
+
+      window.tryApply('#{css}', '#{event}', '#{method}').toString();
+    SCRIPT
+
+    return eval_js(value) == 'true'
+  end
+
   class ParserError < StandardError; end
 
   def parse(str_data)
-    puts str_data
     return nil unless str_data
     data = str_data.respond_to?('dataUsingEncoding:') ? str_data.dataUsingEncoding(NSUTF8StringEncoding) : str_data
     opts = NSJSONReadingMutableContainers | NSJSONReadingMutableLeaves | NSJSONReadingAllowFragments
