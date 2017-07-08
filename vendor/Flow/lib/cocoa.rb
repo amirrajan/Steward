@@ -1,6 +1,6 @@
 require File.join(File.dirname(__FILE__), 'common.rb')
 
-$:.unshift("/Library/RubyMotion/lib")
+$:.unshift("/Library/RubyMotion4.18/lib")
 template = ENV['template'] || 'ios'
 require "motion/project/template/#{template}"
 

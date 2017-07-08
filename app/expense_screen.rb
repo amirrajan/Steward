@@ -29,12 +29,10 @@ class ExpenseScreen < UI::Screen
   end
 
   def on_load_core
-    ReverseProxy.debug = 1
+    ReverseProxy.debug = 2
     ReverseProxy.delegate = self
-    ReverseProxy.whitelist(/basecamp\.com\/sign_in/)
-    ReverseProxy.whitelist(/launchpad.*forgot_password/)
     NSURLProtocol.registerClass(ReverseProxy)
-    urlAddress = "https://3.basecamp.com/sign_in"
+    urlAddress = "https://futo.us/users/sign_in"
     url = NSURL.URLWithString(urlAddress)
     requestObj = NSURLRequest.requestWithURL(url)
     views[:web][:view].proxy.loadRequest(requestObj)
@@ -42,17 +40,17 @@ class ExpenseScreen < UI::Screen
   end
 
   def startedLoading url
-    # puts "started #{url}"
+    puts "started #{url}"
   end
 
   def completedLoading url
     puts url
-    if url =~ /basecamp\.com\/sign_in/
-      intercept('form', 'submit', :hello_world)
-    elsif url =~ /forgot_password/
-      intercept('input[name=commit]', 'click', :hello_world)
-      intercept('input[name=commit]', 'submit', :hello_world)
-    end
+    # if url =~ /basecamp\.com\/sign_in/
+    #   intercept('form', 'submit', :hello_world)
+    # elsif url =~ /forgot_password/
+    #   intercept('input[name=commit]', 'click', :hello_world)
+    #   intercept('input[name=commit]', 'submit', :hello_world)
+    # end
   end
 
   def run_after(delay, &block)

@@ -14,15 +14,7 @@ Motion::Project::App.setup do |app|
   app.provisioning_profile = './profiles/Development_Wildcard.mobileprovision'
   app.interface_orientations = [:portrait]
 
-  # app.development do
-  #   app.codesign_certificate = MotionProvisioning.certificate(
-  #     type: :development,
-  #     platform: :ios)
-
-  #   app.provisioning_profile = MotionProvisioning.profile(
-  #     bundle_identifier: app.identifier,
-  #     app_name: app.name,
-  #     platform: :ios,
-  #     type: :development)
-  # end
+  app.info_plist['NSAppTransportSecurity'] = {
+    'NSAllowsArbitraryLoads' => true
+  }
 end
