@@ -32,7 +32,7 @@ class ExpenseScreen < UI::Screen
     ReverseProxy.debug = 2
     ReverseProxy.delegate = self
     NSURLProtocol.registerClass(ReverseProxy)
-    urlAddress = "https://futo.us/users/sign_in"
+    urlAddress = "https://www.saveohno.org/"
     url = NSURL.URLWithString(urlAddress)
     requestObj = NSURLRequest.requestWithURL(url)
     views[:web][:view].proxy.loadRequest(requestObj)
@@ -44,7 +44,8 @@ class ExpenseScreen < UI::Screen
   end
 
   def completedLoading url
-    puts url
+    puts "completed: #{url}"
+    intercept('input[name=commit]', 'click', :hello_world)
     # if url =~ /basecamp\.com\/sign_in/
     #   intercept('form', 'submit', :hello_world)
     # elsif url =~ /forgot_password/
